@@ -40,9 +40,7 @@ diff --git a/www/ra-worker.js b/www/ra-worker.js
 diff --git a/rust-pack/src/main.rs b/rust-pack/src/main.rs
 --- a/rust-pack/src/main.rs
 +++ b/rust-pack/src/main.rs
-@@ -38,5 +38,9 @@
- fn is_external_mod<'a>(mod_state: &mut ModState<'a>, line: &'a str) -> Option<Mod<'a>> {
-     let line = remove_comment(line);
+@@ -40,3 +40,7 @@
      if line.is_empty() {
          return None;
      }
