@@ -25,21 +25,30 @@ jobs:
         with:
           node-version: "16"
 
-      - name: Get upstream rust-analyzer-wasm and apply the experimental patch
+      - name: Get upstream rust-analyzer-wasm and adapt the source generator
         shell: bash
         run: |
           set -euxo pipefail
           git clone --depth 1 --branch master https://github.com/rust-analyzer/rust-analyzer-wasm.git upstream
           git -C upstream apply "$GITHUB_WORKSPACE/rust-analyzer-wasm-single-thread-experiment.patch"
           python3 - <<'PY'
+          import re
           from pathlib import Path
+
           path = Path("upstream/rust-pack/src/main.rs")
           text = path.read_text()
+
           needle = "    if line.is_empty() {\n        return None;\n    }\n"
           replacement = needle + "    // Test modules are not part of the analysis environment; do not expand them.\n    if line == \"mod tests;\" || line == \"pub mod tests;\" {\n        return None;\n    }\n"
           if needle not in text:
               raise SystemExit("Could not locate the standard-library source generator insertion point.")
-          path.write_text(text.replace(needle, replacement, 1))
+          text = text.replace(needle, replacement, 1)
+
+          missing_path = re.compile(r'                return Err\(MyError \{\n                    libstack: vec!\[path\.to_string_lossy\(\)\.to_string\(\)\],\n                    cause_module: folder_path\.to_string_lossy\(\)\.to_string\(\),\n                \}\);')
+          text, count = missing_path.subn('                output.push_line("}");\n                continue;', text, count=1)
+          if count != 1:
+              raise SystemExit("Could not locate the missing-module fallback in the generator.")
+          path.write_text(text)
           PY
 
       - name: Install pinned Rust and WebAssembly target
