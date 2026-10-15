@@ -31,6 +31,23 @@ jobs:
           set -euxo pipefail
           git clone --depth 1 --branch master https://github.com/rust-analyzer/rust-analyzer-wasm.git upstream
           git -C upstream apply "$GITHUB_WORKSPACE/rust-analyzer-wasm-single-thread-experiment.patch"
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path("upstream/rust-pack/src/main.rs")
+          text = path.read_text()
+          needle = """    if line.is_empty() {
+                  return None;
+              }
+          """
+          replacement = needle + """    // Test modules are not part of the analysis environment; do not expand them.
+              if line == "mod tests;" || line == "pub mod tests;" {
+                  return None;
+              }
+          """
+          if needle not in text:
+              raise SystemExit("Could not locate the standard-library source generator insertion point.")
+          path.write_text(text.replace(needle, replacement, 1))
+          PY
 
       - name: Install pinned Rust and WebAssembly target
         run: |
