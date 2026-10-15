@@ -1,0 +1,85 @@
+diff --git a/rust-toolchain b/rust-toolchain
+index 7f6b87f..08b5191 100644
+--- a/rust-toolchain
++++ b/rust-toolchain
+@@ -1 +1 @@
+-nightly-2021-11-02
++1.68.2
+diff --git a/ra-wasm/Cargo.toml b/ra-wasm/Cargo.toml
+index 0000000..0000000 100644
+--- a/ra-wasm/Cargo.toml
++++ b/ra-wasm/Cargo.toml
+@@ -14,7 +14,6 @@ serde = { version = "1.0.125", features = ["derive"] }
+ serde_repr = "0.1.6"
+ serde-wasm-bindgen = "0.1.3"
+ stacker = "0.1.13"
+ wasm-bindgen = "0.2.72"
+-wasm-bindgen-rayon = "1.0.2"
+ ide = { version = "0.0.81", package = "ra_ap_ide" }
+ cfg = { version = "0.0.81", package = "ra_ap_cfg" }
+ ide_db = { version = "0.0.81", package = "ra_ap_ide_db" }
+diff --git a/ra-wasm/src/lib.rs b/ra-wasm/src/lib.rs
+index 0000000..0000000 100644
+--- a/ra-wasm/src/lib.rs
++++ b/ra-wasm/src/lib.rs
+@@ -21,7 +21,6 @@ mod return_types;
+ use return_types::*;
+ 
+-pub use wasm_bindgen_rayon::init_thread_pool;
+ #[wasm_bindgen(start)]
+ pub fn start() {
+     console_error_panic_hook::set_once();
+diff --git a/www/ra-worker.js b/www/ra-worker.js
+index 0000000..0000000 100644
+--- a/www/ra-worker.js
++++ b/www/ra-worker.js
+@@ -1,12 +1,8 @@
+-import init, { initThreadPool, WorldState } from '../ra-wasm/pkg/wasm_demo.js';
++import init, { WorldState } from '../ra-wasm/pkg/wasm_demo.js';
+ 
+ const start = async () => {
+     await init();
+ 
+-    // Thread pool initialization with the given number of threads
+-    // (pass `navigator.hardwareConcurrency` if you want to use all cores).
+-    await initThreadPool(navigator.hardwareConcurrency)
+-
+     const state = new WorldState();
+     
+     onmessage = (e) => {
+@@ -88,9 +88,17 @@ fn is_external_mod<'a>(mod_state: &mut ModState<'a>, line: &'a str) -> Option<Mod<'a>> {
+             explicit_path: current_mod_state.path_seen,
+             pub_prefix: "pub(super) ",
+             name: clean_token(line),
+         })
+-    } else if let Some(line) = line.strip_prefix("pub(in ") {
+-        panic!("pub in not supported: {}", line);
++    } else if line.starts_with("pub(in ") {
++        // Preserve restricted visibility when flattening the newer standard-library
++        // source used to generate fake_std.rs / fake_core.rs / fake_alloc.rs.
++        let marker = " mod ";
++        let index = line.find(marker)?;
++        Some(Mod {
++            explicit_path: current_mod_state.path_seen,
++            pub_prefix: &line[..index + 1],
++            name: clean_token(&line[index + marker.len()..]),
++        })
+     } else {
+         None
+     }
+diff --git a/www/webpack.config.js b/www/webpack.config.js
+index 0000000..0000000 100644
+--- a/www/webpack.config.js
++++ b/www/webpack.config.js
+@@ -33,11 +33,4 @@ module.exports = {
+             chunks: ["app"],
+         }),
+     ],
+-    // It is needed for firefox works
+-    devServer: {
+-        headers: {
+-            'Cross-Origin-Embedder-Policy': 'require-corp',
+-            'Cross-Origin-Opener-Policy': 'same-origin'
+-        }
+-    },
+ };
