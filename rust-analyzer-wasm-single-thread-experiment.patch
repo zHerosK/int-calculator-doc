@@ -17,16 +17,11 @@ diff --git a/ra-wasm/Cargo.toml b/ra-wasm/Cargo.toml
 diff --git a/ra-wasm/src/lib.rs b/ra-wasm/src/lib.rs
 --- a/ra-wasm/src/lib.rs
 +++ b/ra-wasm/src/lib.rs
-@@ -22,9 +22,8 @@
- mod to_proto;
- 
- mod return_types;
+@@ -25,4 +25,3 @@
  use return_types::*;
  
 -pub use wasm_bindgen_rayon::init_thread_pool;
  
- #[wasm-bindgen(start)]
- pub fn start() {
 diff --git a/www/ra-worker.js b/www/ra-worker.js
 --- a/www/ra-worker.js
 +++ b/www/ra-worker.js
@@ -67,7 +62,7 @@ diff --git a/rust-pack/src/main.rs b/rust-pack/src/main.rs
 diff --git a/www/webpack.config.js b/www/webpack.config.js
 --- a/www/webpack.config.js
 +++ b/www/webpack.config.js
-@@ -38,7 +38,0 @@
+@@ -38,8 +38,1 @@
 -    // It is needed for firefox works
 -    devServer: {
 -        headers: {
@@ -75,3 +70,4 @@ diff --git a/www/webpack.config.js b/www/webpack.config.js
 -            'Cross-Origin-Opener-Policy': 'same-origin'
 -        },
 -    },
+ };
