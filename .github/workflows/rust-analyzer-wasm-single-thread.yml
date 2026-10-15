@@ -1,0 +1,86 @@
+name: Experimental rust-analyzer WASM (single-thread)
+
+on:
+  push:
+    branches:
+      - experiment/rust-analyzer-wasm-single-thread
+    paths:
+      - ".github/workflows/rust-analyzer-wasm-single-thread.yml"
+      - "rust-analyzer-wasm-single-thread-experiment.patch"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-wasm:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Check out the experiment branch
+        uses: actions/checkout@v4
+
+      - name: Install Node.js for the legacy demo build
+        uses: actions/setup-node@v4
+        with:
+          node-version: "16"
+
+      - name: Get upstream rust-analyzer-wasm and apply the experimental patch
+        shell: bash
+        run: |
+          set -euxo pipefail
+          git clone --depth 1 --branch master https://github.com/rust-analyzer/rust-analyzer-wasm.git upstream
+          git -C upstream apply "$GITHUB_WORKSPACE/rust-analyzer-wasm-single-thread-experiment.patch"
+
+      - name: Install pinned Rust and WebAssembly target
+        run: |
+          rustup toolchain install 1.68.2 --profile minimal --component rust-src --target wasm32-unknown-unknown
+          rustc +1.68.2 --version
+          cargo +1.68.2 --version
+
+      - name: Install wasm-pack
+        run: cargo +1.68.2 install wasm-pack --version 0.12.1 --locked
+
+      - name: Generate the prototype standard-library sources
+        working-directory: upstream/rust-pack
+        run: cargo +1.68.2 run --locked
+
+      - name: Update Rayon to versions with non-threaded fallback
+        working-directory: upstream/ra-wasm
+        run: |
+          cargo +1.68.2 update -p rayon --precise 1.7.0
+          cargo +1.68.2 update -p rayon-core --precise 1.11.0
+
+      - name: Check the wasm32 target
+        working-directory: upstream/ra-wasm
+        run: cargo +1.68.2 check --target wasm32-unknown-unknown --locked
+
+      - name: Build the wasm-bindgen package
+        working-directory: upstream/ra-wasm
+        run: wasm-pack build --target web --profiling
+
+      - name: Ensure the generated API no longer exposes a thread-pool initializer
+        shell: bash
+        run: |
+          set -euxo pipefail
+          if grep -R -n "initThreadPool" upstream/ra-wasm/pkg; then
+            echo "Unexpected initThreadPool reference found."
+            exit 1
+          fi
+
+      - name: Build the legacy web demo
+        working-directory: upstream/www
+        run: |
+          npm install --no-audit --no-fund
+          npm run build
+
+      - name: Upload generated Wasm package and demo (if build succeeded)
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rust-analyzer-wasm-single-thread-experiment
+          path: |
+            upstream/ra-wasm/pkg/
+            upstream/www/dist/
+          if-no-files-found: error
+          retention-days: 7
