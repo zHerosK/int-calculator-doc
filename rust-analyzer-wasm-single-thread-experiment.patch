@@ -9,10 +9,7 @@ diff --git a/ra-wasm/Cargo.toml b/ra-wasm/Cargo.toml
 index 0000000..0000000 100644
 --- a/ra-wasm/Cargo.toml
 +++ b/ra-wasm/Cargo.toml
-@@ -14,7 +14,6 @@ serde = { version = "1.0.125", features = ["derive"] }
- serde_repr = "0.1.6"
- serde-wasm-bindgen = "0.1.3"
- stacker = "0.1.13"
+@@ -18,5 +18,4 @@
  wasm-bindgen = "0.2.72"
 -wasm-bindgen-rayon = "1.0.2"
  ide = { version = "0.0.81", package = "ra_ap_ide" }
@@ -33,7 +30,7 @@ diff --git a/www/ra-worker.js b/www/ra-worker.js
 index 0000000..0000000 100644
 --- a/www/ra-worker.js
 +++ b/www/ra-worker.js
-@@ -1,12 +1,8 @@
+@@ -1,10 +1,6 @@
 -import init, { initThreadPool, WorldState } from '../ra-wasm/pkg/wasm_demo.js';
 +import init, { WorldState } from '../ra-wasm/pkg/wasm_demo.js';
  
@@ -45,10 +42,11 @@ index 0000000..0000000 100644
 -    await initThreadPool(navigator.hardwareConcurrency)
 -
      const state = new WorldState();
-     
-     onmessage = (e) => {
+diff --git a/rust-pack/src/main.rs b/rust-pack/src/main.rs
+index 0000000..0000000 100644
+--- a/rust-pack/src/main.rs
++++ b/rust-pack/src/main.rs
 @@ -88,9 +88,17 @@ fn is_external_mod<'a>(mod_state: &mut ModState<'a>, line: &'a str) -> Option<Mod<'a>> {
-             explicit_path: current_mod_state.path_seen,
              pub_prefix: "pub(super) ",
              name: clean_token(line),
          })
@@ -67,19 +65,18 @@ index 0000000..0000000 100644
      } else {
          None
      }
+ }
 diff --git a/www/webpack.config.js b/www/webpack.config.js
 index 0000000..0000000 100644
 --- a/www/webpack.config.js
 +++ b/www/webpack.config.js
-@@ -33,11 +33,4 @@ module.exports = {
-             chunks: ["app"],
-         }),
+@@ -29,9 +29,2 @@
      ],
 -    // It is needed for firefox works
 -    devServer: {
 -        headers: {
 -            'Cross-Origin-Embedder-Policy': 'require-corp',
 -            'Cross-Origin-Opener-Policy': 'same-origin'
--        }
+-        },
 -    },
  };
