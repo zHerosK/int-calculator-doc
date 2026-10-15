@@ -38,9 +38,6 @@ jobs:
           rustc +1.68.2 --version
           cargo +1.68.2 --version
 
-      - name: Install wasm-pack
-        run: cargo +1.68.2 install wasm-pack --version 0.12.1 --locked
-
       - name: Generate the prototype standard-library sources
         working-directory: upstream/rust-pack
         run: cargo +1.68.2 run --locked
@@ -51,9 +48,18 @@ jobs:
           cargo +1.68.2 update -p rayon --precise 1.7.0
           cargo +1.68.2 update -p rayon-core --precise 1.11.0
 
-      - name: Check the wasm32 target
+      - name: Check the wasm32 target before packaging
         working-directory: upstream/ra-wasm
         run: cargo +1.68.2 check --target wasm32-unknown-unknown --locked
+
+      - name: Install prebuilt wasm-pack 0.12.1
+        shell: bash
+        run: |
+          set -euxo pipefail
+          curl --fail --location --retry 3             https://github.com/wasm-bindgen/wasm-pack/releases/download/v0.12.1/wasm-pack-v0.12.1-x86_64-unknown-linux-musl.tar.gz             --output /tmp/wasm-pack.tar.gz
+          tar -xzf /tmp/wasm-pack.tar.gz -C /tmp
+          sudo install /tmp/wasm-pack-v0.12.1-x86_64-unknown-linux-musl/wasm-pack /usr/local/bin/wasm-pack
+          wasm-pack --version
 
       - name: Build the wasm-bindgen package
         working-directory: upstream/ra-wasm
