@@ -40,14 +40,6 @@ diff --git a/www/ra-worker.js b/www/ra-worker.js
 diff --git a/rust-pack/src/main.rs b/rust-pack/src/main.rs
 --- a/rust-pack/src/main.rs
 +++ b/rust-pack/src/main.rs
-@@ -40,3 +40,7 @@
-     if line.is_empty() {
-         return None;
-     }
-+    // Test modules are not part of the analysis environment; do not expand them.
-+    if line == "mod tests;" || line == "pub mod tests;" {
-+        return None;
-+    }
 @@ -91,8 +91,16 @@
              pub_prefix: "pub(super) ",
              name: clean_token(line),
